@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.mainactivity.MainActivity">
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabNewQR"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:backgroundTint="@color/white"
+        android:clickable="true"
+        android:contentDescription="@string/condes_fab"
+        android:focusable="true"
+        app:fabCustomSize="96dp"
+        app:fabSize="auto"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:maxImageSize="36dp"
+        app:srcCompat="@drawable/ic_fab_qr" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabCamera"
+        android:layout_width="0dp"
+        android:layout_height="64dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/white"
+        android:clickable="true"
+        android:contentDescription="@string/condes_fab_scan"
+        android:focusable="true"
+        android:text="@string/condes_fab_scan"
+        android:visibility="invisible"
+        app:fabCustomSize="48dp"
+        app:icon="@drawable/ic_fab_camera"
+        app:layout_constraintBottom_toTopOf="@+id/fabNewQR"
+        app:layout_constraintEnd_toEndOf="@+id/fabNewQR"
+        app:layout_constraintStart_toStartOf="@+id/fabGallery"
+        app:maxImageSize="36dp" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabGallery"
+        android:layout_width="wrap_content"
+        android:layout_height="64dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/white"
+        android:clickable="true"
+        android:contentDescription="@string/condes_fab_upload"
+        android:focusable="true"
+        android:text="@string/condes_fab_upload"
+        android:visibility="invisible"
+        app:fabCustomSize="48dp"
+        app:icon="@drawable/ic_fab_gallery"
+        app:layout_constraintBottom_toTopOf="@+id/fabCamera"
+        app:layout_constraintEnd_toEndOf="@+id/fabNewQR"
+        app:maxImageSize="36dp"
+        app:srcCompat="@drawable/ic_fab_gallery" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
