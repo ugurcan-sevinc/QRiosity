@@ -2,6 +2,8 @@
 
 I am currently revamping the QReader application to enhance its user interface quality. It's still a work in progress, but I'm excited about the improvements!
 
+### Old Version of QRiosity named QReader
+https://github.com/ugurcan-sevinc/QReader.git
 
 ### Here's the current UI of QRiosity (Please note that it's not final and may undergo further changes)
 
