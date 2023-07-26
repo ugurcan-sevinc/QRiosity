@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="fabDefaultSize">64dp</dimen>
+    <dimen name="fabSmallerSize">64dp</dimen>
+
+    <dimen name="fabIconDefaultSize">30dp</dimen>
+    <dimen name="fabIconSmallerSize">26dp</dimen>
+
+</resources>
