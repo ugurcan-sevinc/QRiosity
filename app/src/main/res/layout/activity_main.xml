@@ -12,13 +12,33 @@
         android:layout_width="72dp"
         android:layout_height="72dp"
         android:layout_marginTop="16dp"
+        android:src="@drawable/qr_icon"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:lottie_autoPlay="true"
         app:lottie_loop="true"
-        android:src="@drawable/qr_icon"
-        app:lottie_rawRes="@raw/lottie_icon"/>
+        app:lottie_rawRes="@raw/lottie_icon" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/saved_link_recyclerview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/animationView" />
+
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -36,7 +56,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:maxImageSize="30dp"
-        app:srcCompat="@drawable/baseline_add_24"/>
+        app:srcCompat="@drawable/baseline_add_24"
+        app:tint="#070B10" />
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabCamera"
@@ -48,9 +69,11 @@
         android:contentDescription="@string/condes_fab_scan"
         android:focusable="true"
         android:text="@string/condes_fab_scan"
-        android:visibility="invisible"
+        android:textColor="#070B10"
+        android:visibility="gone"
         app:fabCustomSize="48dp"
         app:icon="@drawable/baseline_camera_36"
+        app:iconTint="#070B10"
         app:layout_constraintBottom_toTopOf="@+id/fabNewQR"
         app:layout_constraintEnd_toEndOf="@+id/fabNewQR"
         app:layout_constraintStart_toStartOf="@+id/fabGallery"
@@ -66,9 +89,11 @@
         android:contentDescription="@string/condes_fab_upload"
         android:focusable="true"
         android:text="@string/condes_fab_upload"
-        android:visibility="invisible"
+        android:textColor="#070B10"
+        android:visibility="gone"
         app:fabCustomSize="48dp"
         app:icon="@drawable/baseline_image_36"
+        app:iconTint="#070B10"
         app:layout_constraintBottom_toTopOf="@+id/fabCamera"
         app:layout_constraintEnd_toEndOf="@+id/fabNewQR"
         app:maxImageSize="36dp"

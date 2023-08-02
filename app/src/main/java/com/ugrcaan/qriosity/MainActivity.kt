@@ -1,5 +1,6 @@
 package com.ugrcaan.qriosity
 
+import SavedLinkAdapter
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ClipData
@@ -18,12 +19,15 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanIntentResult
 import com.journeyapps.barcodescanner.ScanOptions
 import com.ugrcaan.qriosity.databinding.ActivityMainBinding
+import com.ugrcaan.qriosity.model.SavedLink
 import com.ugrcaan.qriosity.utils.ImageScanUtil
 import java.io.ByteArrayOutputStream
 
@@ -39,6 +43,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(viewBinding.root)
         isClicked = false
 
+        val savedLinks = listOf(
+            SavedLink("Sopung Menu", "https://sopungmenu.com/izmir"),
+            SavedLink("Bolemo", "https://bolemo.weebly.com/"),
+            // Add more SavedLink objects here
+        )
+
+        // Set the layout manager and adapter for the RecyclerView
+        viewBinding.savedLinkRecyclerview.layoutManager = LinearLayoutManager(this)
+        viewBinding.savedLinkRecyclerview.adapter = SavedLinkAdapter(savedLinks,viewBinding.webView,viewBinding.fabNewQR)
+
         viewBinding.fabNewQR.setOnClickListener {
             isClicked = !isClicked
             setAnimation(
@@ -51,6 +65,10 @@ class MainActivity : AppCompatActivity() {
             setFabSize(isClicked, viewBinding.fabNewQR, resources)
             setVisibility(isClicked, viewBinding.fabCamera)
             setVisibility(isClicked, viewBinding.fabGallery)
+        }
+
+        viewBinding.animationView.setOnClickListener{
+            openRickrollOnYouTube()
         }
 
         viewBinding.fabCamera.setOnClickListener {
@@ -66,6 +84,29 @@ class MainActivity : AppCompatActivity() {
                 onCameraButtonClick()
             }
             return@setOnLongClickListener true
+        }
+    }
+
+    private fun openRickrollOnYouTube() {
+        val videoId = "dQw4w9WgXcQ" // Rick Astley - Never Gonna Give You Up
+        val youtubeAppIntent = Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:$videoId"))
+        val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=$videoId"))
+
+        try {
+            startActivity(youtubeAppIntent)
+        } catch (ex: Exception) {
+            // If the YouTube app is not installed or an error occurred, open the video in the web browser
+            startActivity(webIntent)
+        }
+    }
+
+    override fun onBackPressed() {
+        if (viewBinding.webView.visibility == View.VISIBLE) {
+            viewBinding.webView.visibility = View.GONE
+            viewBinding.fabNewQR.visibility = View.VISIBLE
+        } else {
+            // Otherwise, proceed with normal back button behavior
+            super.onBackPressed()
         }
     }
 
