@@ -11,13 +11,14 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.MediaStore
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,6 +37,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewBinding: ActivityMainBinding
 
     private var isClicked: Boolean = false
+
+    private val galleryLauncher: ActivityResultLauncher<String> = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { processImageForQrCode(it) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,21 +117,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 1001 && resultCode == RESULT_OK) {
-            // Gallery image selected
-            data?.data?.let { uri ->
-                // Convert gallery image URI to bitmap
-                val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
-                // Process the bitmap for QR code scanning
-                processImageForQrCode(bitmap)
-            }
+    private fun processImageForQrCode(uri: Uri) {
+        val bitmap = contentResolver.openInputStream(uri)?.use { inputStream ->
+            BitmapFactory.decodeStream(inputStream)
         }
-    }
 
-    private fun processImageForQrCode(bitmap: Bitmap) {
+        if (bitmap == null) {
+            Toast.makeText(this, "Unable to read image", Toast.LENGTH_LONG).show()
+            return
+        }
+
         // Convert bitmap to byte array
         val byteArrayOutputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
@@ -200,9 +202,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onGalleryButtonClick() {
-        val intent = Intent(Intent.ACTION_PICK)
-        intent.type = "image/*"
-        startActivityForResult(intent, 1001)
+        galleryLauncher.launch("image/*")
     }
 
     private fun setVisibility(isClicked: Boolean, fab: ExtendedFloatingActionButton) {
