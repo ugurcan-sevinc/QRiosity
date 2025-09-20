@@ -1,6 +1,6 @@
 package com.ugrcaan.qriosity
 
-import SavedLinkAdapter
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ClipData
@@ -11,29 +11,57 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import android.webkit.URLUtil
 import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanIntentResult
 import com.journeyapps.barcodescanner.ScanOptions
+import com.ugrcaan.qriosity.data.SavedLinkRepository
+import com.ugrcaan.qriosity.data.local.QriosityDatabase
 import com.ugrcaan.qriosity.databinding.ActivityMainBinding
 import com.ugrcaan.qriosity.model.SavedLink
 import com.ugrcaan.qriosity.utils.ImageScanUtil
+import com.ugrcaan.qriosity.viewmodel.MainVM
 import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var viewBinding: ActivityMainBinding
+
+    private val viewModel: MainVM by viewModels {
+        MainVM.provideFactory(
+            SavedLinkRepository(
+                QriosityDatabase.getInstance(applicationContext).savedLinkDao()
+            )
+        )
+    }
+
+    private val savedLinkAdapter: SavedLinkAdapter by lazy {
+        SavedLinkAdapter(object : SavedLinkAdapter.SavedLinkListener {
+            override fun onOpenLink(savedLink: SavedLink) {
+                openLinkInWebView(savedLink.link)
+            }
+
+            override fun onDeleteLink(savedLink: SavedLink) {
+                confirmDeletion(savedLink)
+            }
+        })
+    }
 
     private var isClicked: Boolean = false
 
@@ -43,15 +71,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(viewBinding.root)
         isClicked = false
 
-        val savedLinks = listOf(
-            SavedLink("Sopung Menu", "https://sopungmenu.com/izmir"),
-            SavedLink("Bolemo", "https://bolemo.weebly.com/"),
-            // Add more SavedLink objects here
-        )
-
-        // Set the layout manager and adapter for the RecyclerView
-        viewBinding.savedLinkRecyclerview.layoutManager = LinearLayoutManager(this)
-        viewBinding.savedLinkRecyclerview.adapter = SavedLinkAdapter(savedLinks,viewBinding.webView,viewBinding.fabNewQR)
+        setupRecyclerView()
+        observeSavedLinks()
 
         viewBinding.fabNewQR.setOnClickListener {
             isClicked = !isClicked
@@ -67,7 +88,7 @@ class MainActivity : AppCompatActivity() {
             setVisibility(isClicked, viewBinding.fabGallery)
         }
 
-        viewBinding.animationView.setOnClickListener{
+        viewBinding.animationView.setOnClickListener {
             openRickrollOnYouTube()
         }
 
@@ -87,15 +108,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupRecyclerView() {
+        viewBinding.savedLinkRecyclerview.layoutManager = LinearLayoutManager(this)
+        viewBinding.savedLinkRecyclerview.adapter = savedLinkAdapter
+    }
+
+    private fun observeSavedLinks() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.savedLinks.collect { links ->
+                    savedLinkAdapter.submitList(links)
+                }
+            }
+        }
+    }
+
     private fun openRickrollOnYouTube() {
-        val videoId = "dQw4w9WgXcQ" // Rick Astley - Never Gonna Give You Up
+        val videoId = "dQw4w9WgXcQ"
         val youtubeAppIntent = Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:$videoId"))
         val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=$videoId"))
 
         try {
             startActivity(youtubeAppIntent)
         } catch (ex: Exception) {
-            // If the YouTube app is not installed or an error occurred, open the video in the web browser
             startActivity(webIntent)
         }
     }
@@ -104,8 +139,8 @@ class MainActivity : AppCompatActivity() {
         if (viewBinding.webView.visibility == View.VISIBLE) {
             viewBinding.webView.visibility = View.GONE
             viewBinding.fabNewQR.visibility = View.VISIBLE
+            viewBinding.webView.loadUrl("about:blank")
         } else {
-            // Otherwise, proceed with normal back button behavior
             super.onBackPressed()
         }
     }
@@ -114,48 +149,32 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1001 && resultCode == RESULT_OK) {
-            // Gallery image selected
             data?.data?.let { uri ->
-                // Convert gallery image URI to bitmap
                 val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
-                // Process the bitmap for QR code scanning
                 processImageForQrCode(bitmap)
             }
         }
     }
 
     private fun processImageForQrCode(bitmap: Bitmap) {
-        // Convert bitmap to byte array
         val byteArrayOutputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
-        // Decode byte array to bitmap with RGB_565 format for QR code scanning
         val options = BitmapFactory.Options()
         options.inPreferredConfig = Bitmap.Config.RGB_565
         val decodedBitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
-        // Start QR code scanning with the decoded bitmap
         val result = ImageScanUtil.decodeQrCode(decodedBitmap)
         if (result == null) {
             Toast.makeText(this, "No QR code found in the image", Toast.LENGTH_LONG).show()
         } else {
-            // Handle the QR code result
             showResultDialog(this, result)
         }
     }
 
-
     private fun showResultDialog(context: Context, link: String) {
-        val domainExtensions = listOf(".com", ".net", ".org", ".edu", ".gov", ".co.uk", ".ca", ".au", ".us", ".info", ".biz", ".io", ".org.uk", ".online", ".xyz")
-        var formattedLink = link
+        val formattedLink = ensureScheme(link)
 
-        if (domainExtensions.any { formattedLink.contains(it) }) {
-            if (!formattedLink.startsWith("http://") && !formattedLink.startsWith("https://")) {
-                formattedLink = "http://$formattedLink"
-            }
-        }
-
-
-        val alertDialog = AlertDialog.Builder(context)
+        AlertDialog.Builder(context)
             .setTitle("QR Code Result")
             .setMessage(formattedLink)
             .setNegativeButton("Copy Link") { dialog, _ ->
@@ -166,16 +185,22 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(context, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
-            .setPositiveButton("Open in Browser") { dialog, _ ->
+            .setNeutralButton("Open in Browser") { dialog, _ ->
                 val intent = Intent(Intent.ACTION_VIEW)
                 intent.data = Uri.parse(formattedLink)
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 context.startActivity(Intent.createChooser(intent, "Open link with..."))
                 dialog.dismiss()
             }
+            .setPositiveButton("Kaydet") { dialog, _ ->
+                viewModel.saveLink(deriveDisplayName(formattedLink), formattedLink)
+                openLinkInWebView(formattedLink)
+                Toast.makeText(context, R.string.link_saved, Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
             .setCancelable(true)
             .create()
-        alertDialog.show()
+            .show()
     }
 
     private val barcodeLauncher = registerForActivityResult(
@@ -206,14 +231,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setVisibility(isClicked: Boolean, fab: ExtendedFloatingActionButton) {
-        if (isClicked) {
-            fab.visibility = View.VISIBLE
-            fab.visibility = View.VISIBLE
-        } else {
-            fab.visibility = View.GONE
-            fab.visibility = View.GONE
-        }
-
+        fab.visibility = if (isClicked) View.VISIBLE else View.GONE
     }
 
     private fun setAnimation(
@@ -260,20 +278,17 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-
         if (isClicked) {
             extFabGallery.startAnimation(fromRight)
             extFabCamera.startAnimation(fromRight)
             fab.startAnimation(scaleDown)
             fab.startAnimation(rotateToCloseIcon)
-
         } else {
             extFabGallery.startAnimation(toRight)
             extFabCamera.startAnimation(toRight)
             fab.startAnimation(scaleUp)
             fab.startAnimation(returnToAddIcon)
         }
-
     }
 
     private fun setFabSize(
@@ -290,5 +305,44 @@ class MainActivity : AppCompatActivity() {
             fab.setMaxImageSize(resources.getDimensionPixelSize(R.dimen.fabIconDefaultSize))
             fab.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.baseline_add_24))
         }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun openLinkInWebView(url: String) {
+        viewBinding.fabNewQR.visibility = View.GONE
+        viewBinding.webView.visibility = View.VISIBLE
+        viewBinding.webView.settings.javaScriptEnabled = true
+        viewBinding.webView.loadUrl(url)
+    }
+
+    private fun ensureScheme(link: String): String {
+        if (URLUtil.isValidUrl(link)) return link
+        val prefixes = listOf("http://", "https://")
+        if (prefixes.any { link.startsWith(it, ignoreCase = true) }) {
+            return link
+        }
+        return "http://$link"
+    }
+
+    private fun deriveDisplayName(url: String): String {
+        return try {
+            val parsed = Uri.parse(url)
+            parsed.host ?: url
+        } catch (error: Exception) {
+            url
+        }
+    }
+
+    private fun confirmDeletion(savedLink: SavedLink) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.app_name)
+            .setMessage(getString(R.string.delete_confirmation, savedLink.name))
+            .setPositiveButton(android.R.string.ok) { dialog, _ ->
+                viewModel.deleteLink(savedLink)
+                Toast.makeText(this, R.string.link_deleted, Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 }
