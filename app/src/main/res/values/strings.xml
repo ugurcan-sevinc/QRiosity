@@ -3,4 +3,7 @@
     <string name="condes_fab">Scan New QR</string>
     <string name="condes_fab_scan">Scan With Camera</string>
     <string name="condes_fab_upload">Upload From Gallery</string>
+    <string name="delete_confirmation">%1$s bağlantısını silmek istiyor musunuz?</string>
+    <string name="link_deleted">Bağlantı silindi</string>
+    <string name="link_saved">Bağlantı kaydedildi</string>
 </resources>
