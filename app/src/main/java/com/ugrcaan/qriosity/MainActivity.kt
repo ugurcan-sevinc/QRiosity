@@ -127,6 +127,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        processImageForQrCode(bitmap)
+    }
+
+    private fun processImageForQrCode(bitmap: Bitmap) {
         // Convert bitmap to byte array
         val byteArrayOutputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
